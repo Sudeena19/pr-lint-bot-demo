@@ -3,19 +3,21 @@ from lint_bot.linter import lint_repo
 from lint_bot.github_bot import post_inline_comment, post_summary_comment
 
 def main():
-    github_token = os.environ.get("GITHUB_TOKEN")
-    repo_name = os.environ.get("REPO")
-    pr_number = os.environ.get("PR_NUMBER")
+    repo_name = os.getenv("REPO")
+    pr_number = os.getenv("PR_NUMBER")
+    token = os.getenv("GITHUB_TOKEN")
 
-    if not github_token or not repo_name or not pr_number:
+    if not repo_name or not pr_number or not token:
         print("Missing environment variables: GITHUB_TOKEN, REPO, or PR_NUMBER")
         return
 
-    pr_number = int(pr_number)
-    issues = lint_repo(".")  # Lint all .py files in repo
+    issues = lint_repo(".")  # Lint all Python files in repo
 
-    post_inline_comment(repo_name, pr_number, issues)
-    post_summary_comment(repo_name, pr_number, issues)
+    # Post inline comments
+    post_inline_comment(repo_name, int(pr_number), issues)
+
+    # Post summary comment
+    post_summary_comment(repo_name, int(pr_number), issues)
 
 if __name__ == "__main__":
     main()

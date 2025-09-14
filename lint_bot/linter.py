@@ -1,42 +1,23 @@
 import os
 
-def lint_file(file_path):
-    """
-    Lint a single Python file.
-    Returns a list of issues with keys: filename, line, message.
-    """
+def lint_file(filepath):
     issues = []
-    with open(file_path, "r", encoding="utf-8", errors="ignore") as f:
-        for i, line in enumerate(f, start=1):
-            if len(line) > 100:
-                issues.append({
-                    "filename": file_path,
-                    "line": i,
-                    "message": "Line exceeds 100 characters"
-                })
-            if "\t" in line:
-                issues.append({
-                    "filename": file_path,
-                    "line": i,
-                    "message": "Tab character found, use spaces instead"
-                })
-            if line.rstrip().endswith(" "):
-                issues.append({
-                    "filename": file_path,
-                    "line": i,
-                    "message": "Trailing whitespace"
-                })
+    with open(filepath, "r", encoding="utf-8", errors="ignore") as f:
+        lines = f.readlines()
+    for i, line in enumerate(lines, 1):
+        if len(line) > 80:
+            issues.append({"filename": filepath, "line": i, "message": "Line > 80 chars"})
+        if line.rstrip() != line:
+            issues.append({"filename": filepath, "line": i, "message": "Trailing whitespace"})
     return issues
 
-def lint_repo(root_dir="."):
-    """
-    Lint all Python files in a directory recursively.
-    Returns a list of all issues.
-    """
+def lint_repo(repo_path):
     all_issues = []
-    for root, _, files in os.walk(root_dir):
+    for root, dirs, files in os.walk(repo_path):
+        # Skip venv and cache folders
+        if "venv" in root or "__pycache__" in root:
+            continue
         for f in files:
             if f.endswith(".py"):
-                file_path = os.path.join(root, f)
-                all_issues.extend(lint_file(file_path))
+                all_issues.extend(lint_file(os.path.join(root, f)))
     return all_issues
