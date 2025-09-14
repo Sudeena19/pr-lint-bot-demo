@@ -1,45 +1,44 @@
 import os
 from github import Github
 
-def get_github_instance():
-    token = os.getenv("GITHUB_TOKEN")
-    if not token:
-        raise EnvironmentError("GITHUB_TOKEN not found in environment")
-    return Github(token)
-
-def post_inline_comments(repo_name, pr_number, issues):
+def post_inline_comment(repo_name, pr_number, issues):
     """
-    Posts inline comments for each issue (optional, only for issues needing attention).
+    Post inline comments to GitHub PR.
+    If API fails, fallback to summary.
     """
-    gh = get_github_instance()
-    repo = gh.get_repo(repo_name)
+    g = Github(os.environ["GITHUB_TOKEN"])
+    repo = g.get_repo(repo_name)
     pr = repo.get_pull(pr_number)
 
     for issue in issues:
         try:
-            pr.create_review_comment(
-                body=issue["message"],
-                commit_id=pr.head.sha,
-                path=issue["filename"],
-                line=issue["line"],
-                side="RIGHT"
+            pr.create_review(
+                event="COMMENT",
+                comments=[{
+                    "path": issue.get("filename", "unknown"),
+                    "line": issue.get("line", 1),
+                    "body": issue.get("message", "")
+                }]
             )
         except Exception as e:
-            print("Could not post inline comment, will include in summary:", e)
+            print(f"Could not post inline comment, will include in summary: {e}")
 
 def post_summary_comment(repo_name, pr_number, issues):
     """
-    Posts a summary comment in the PR for all issues.
+    Post a summary comment on the PR.
     """
-    gh = get_github_instance()
-    repo = gh.get_repo(repo_name)
-    pr = repo.get_pull(pr_number)
-
+    body = ""
     if not issues:
-        body = " PR Lint Bot: No issues found!"
+        body = "No lint issues found. Good job!"
     else:
-        body = "### PR Lint Bot Summary\n"
+        body = "### Lint issues found:\n"
         for issue in issues:
-            body += f"- {issue['filename']}:{issue['line']} - {issue['message']}\n"
+            filename = issue.get("filename", "unknown file")
+            line = issue.get("line", "?")
+            message = issue.get("message", "")
+            body += f"- {filename}:{line} - {message}\n"
 
+    g = Github(os.environ["GITHUB_TOKEN"])
+    repo = g.get_repo(repo_name)
+    pr = repo.get_pull(pr_number)
     pr.create_issue_comment(body)
