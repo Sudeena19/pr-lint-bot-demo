@@ -21,8 +21,7 @@ jobs:
 
       - name: Run PR Lint Bot
         env:
-          GITHUB_TOKEN: ${{ secrets.PERSONAL_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
           GITHUB_REPOSITORY: ${{ github.repository }}
-        run: |
-          python app.py
+        run: python app.py
