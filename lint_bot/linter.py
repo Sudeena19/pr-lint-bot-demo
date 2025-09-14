@@ -1,45 +1,55 @@
-import subprocess
-import json
+# lint_bot/linter.py
 import os
+import subprocess
 
-SERIOUS_CODES = {"E", "F", "W"}  # Example: E=error, F=failed, W=warning
-# You can adjust based on ruff's code convention
+IGNORE_DIRS = {"venv", ".venv", "__pycache__", ".git"}
 
-def lint_file(filepath):
-    """Lint a single Python file and return issues"""
+def lint_file(file_path):
+    """
+    Lint a single Python file using ruff and return a list of issues.
+    Each issue is a dict: {'filename', 'line', 'message'}
+    """
     issues = []
     try:
         result = subprocess.run(
-            ["ruff", "--format", "json", filepath],
+            ["ruff", "--select=E,F,W", "--show-source", file_path],
             capture_output=True,
             text=True,
             check=False
         )
-        if result.stdout:
-            data = json.loads(result.stdout)
-            for item in data:
-                code_prefix = item["code"][0] if "code" in item else "?"
-                issues.append({
-                    "filename": os.path.relpath(item["filename"]),
-                    "line": item.get("line", 0),
-                    "message": item.get("message", ""),
-                    "serious": code_prefix in SERIOUS_CODES
-                })
+        output = result.stdout.strip()
+        if output:
+            for line in output.splitlines():
+                # Ruff output: path:line:col: code message
+                parts = line.split(":", 3)
+                if len(parts) == 4:
+                    filename, line_no, _, message = parts
+                    issues.append({
+                        "filename": filename.strip(),
+                        "line": int(line_no.strip()),
+                        "message": message.strip()
+                    })
     except Exception as e:
-        issues.append({
-            "filename": filepath,
-            "line": 0,
-            "message": f"Failed to lint file: {str(e)}",
-            "serious": True
-        })
+        print(f"Error linting {file_path}: {e}")
     return issues
 
 def lint_repo(repo_path="."):
-    """Lint all Python files in repo"""
+    """
+    Lint all Python files in the repository, ignoring cache/packaging dirs.
+    Returns a list of all issues found.
+    """
     all_issues = []
-    for root, _, files in os.walk(repo_path):
+    for root, dirs, files in os.walk(repo_path):
+        # Remove ignored directories from walk
+        dirs[:] = [d for d in dirs if d not in IGNORE_DIRS]
         for f in files:
             if f.endswith(".py"):
-                filepath = os.path.join(root, f)
-                all_issues.extend(lint_file(filepath))
+                file_path = os.path.join(root, f)
+                all_issues.extend(lint_file(file_path))
     return all_issues
+
+if __name__ == "__main__":
+    issues = lint_repo(".")
+    print(f"Found {len(issues)} issues:")
+    for issue in issues:
+        print(f"{issue['filename']}:{issue['line']} - {issue['message']}")
