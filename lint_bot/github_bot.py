@@ -1,22 +1,45 @@
-import requests
+import os
+from github import Github
 
-def post_inline_comment(repo, pr_number, token, message):
-    # For demonstration, just posts the first issue inline (needs line/commit info for true inline)
-    url = f"https://api.github.com/repos/{repo}/issues/{pr_number}/comments"
-    headers = {"Authorization": f"token {token}"}
-    body = f"**PR Lint Bot Inline Example:** {message}"
-    response = requests.post(url, json={"body": body}, headers=headers)
-    if response.status_code == 201:
-        print("Inline comment posted!")
-    else:
-        print("Failed to post inline comment:", response.text)
+def get_github_instance():
+    token = os.getenv("GITHUB_TOKEN")
+    if not token:
+        raise EnvironmentError("GITHUB_TOKEN not found in environment")
+    return Github(token)
 
-def post_summary_comment(repo, pr_number, token, messages):
-    url = f"https://api.github.com/repos/{repo}/issues/{pr_number}/comments"
-    headers = {"Authorization": f"token {token}"}
-    body = "### PR Lint Bot Summary\n\n" + "\n".join(messages)
-    response = requests.post(url, json={"body": body}, headers=headers)
-    if response.status_code == 201:
-        print("Summary comment posted!")
+def post_inline_comments(repo_name, pr_number, issues):
+    """
+    Posts inline comments for each issue (optional, only for issues needing attention).
+    """
+    gh = get_github_instance()
+    repo = gh.get_repo(repo_name)
+    pr = repo.get_pull(pr_number)
+
+    for issue in issues:
+        try:
+            pr.create_review_comment(
+                body=issue["message"],
+                commit_id=pr.head.sha,
+                path=issue["filename"],
+                line=issue["line"],
+                side="RIGHT"
+            )
+        except Exception as e:
+            print("Could not post inline comment, will include in summary:", e)
+
+def post_summary_comment(repo_name, pr_number, issues):
+    """
+    Posts a summary comment in the PR for all issues.
+    """
+    gh = get_github_instance()
+    repo = gh.get_repo(repo_name)
+    pr = repo.get_pull(pr_number)
+
+    if not issues:
+        body = " PR Lint Bot: No issues found!"
     else:
-        print("Failed to post summary:", response.text)
+        body = "### PR Lint Bot Summary\n"
+        for issue in issues:
+            body += f"- {issue['filename']}:{issue['line']} - {issue['message']}\n"
+
+    pr.create_issue_comment(body)
