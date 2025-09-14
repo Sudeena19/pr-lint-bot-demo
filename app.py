@@ -41,9 +41,11 @@ def comment_on_pr(issues):
 if __name__ == "__main__": 
     all_issues = []
     for root, _, files in os.walk("."):
-        for f in files:
-            if f.endswith(".py"):
-                all_issues.extend(lint_file(os.path.join(root, f)))
+    if ".github" in root:
+        continue  # skip workflow files
+    for f in files:
+        if f.endswith(".py"):
+            all_issues.extend(lint_file(os.path.join(root, f)))
 
     if all_issues:
         print("Issues found:")
