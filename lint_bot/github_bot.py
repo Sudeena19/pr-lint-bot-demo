@@ -1,43 +1,38 @@
 import os
 from github import Github
 
-def post_inline_comment(repo_name, pr_number, issues):
-    token = os.getenv("GITHUB_TOKEN")
-    if not token:
-        print("Missing GITHUB_TOKEN")
-        return
-    g = Github(token)
-    repo = g.get_repo(repo_name)
-    pr = repo.get_pull(pr_number)
+GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
+REPO_NAME = os.getenv("REPO")
+PR_NUMBER = int(os.getenv("PR_NUMBER", 0))
 
-    for issue in issues:
-        try:
-            pr.create_review(
-                body=issue["message"],
-                event="COMMENT",
-                comments=[{
-                    "path": issue["filename"].replace("\\", "/"),
-                    "position": issue["line"],
-                    "body": issue["message"]
-                }]
-            )
-        except Exception as e:
-            print(f"Could not post inline comment, will include in summary: '{issue['message']}'")
+if not all([GITHUB_TOKEN, REPO_NAME, PR_NUMBER]):
+    raise EnvironmentError("Missing environment variables: GITHUB_TOKEN, REPO, or PR_NUMBER")
 
-def post_summary_comment(repo_name, pr_number, issues):
-    token = os.getenv("GITHUB_TOKEN")
-    if not token:
-        print("Missing GITHUB_TOKEN")
-        return
-    g = Github(token)
-    repo = g.get_repo(repo_name)
-    pr = repo.get_pull(pr_number)
+gh = Github(GITHUB_TOKEN)
+repo = gh.get_repo(REPO_NAME)
+pr = repo.get_pull(PR_NUMBER)
 
+def post_inline_comment(issue):
+    try:
+        pr.create_review(
+            event="COMMENT",
+            comments=[{
+                "path": issue["filename"],
+                "position": issue["line"] if issue["line"] > 0 else 1,
+                "body": issue["message"]
+            }]
+        )
+    except Exception as e:
+        print(f"Could not post inline comment, will include in summary: {e}")
+
+def post_summary_comment(issues):
     if not issues:
-        body = " No lint issues found."
+        body = "No linting issues found."
     else:
-        body = " Lint issues summary:\n"
+        body = "## Linting Summary\n"
         for issue in issues:
             body += f"- {issue['filename']}:{issue['line']} - {issue['message']}\n"
-
-    pr.create_issue_comment(body)
+    try:
+        pr.create_issue_comment(body)
+    except Exception as e:
+        print(f"Could not post summary comment: {e}")
