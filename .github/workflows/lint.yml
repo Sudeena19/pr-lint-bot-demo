@@ -1,23 +1,29 @@
 name: PR Lint Bot
 
-on: [pull_request]
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]  # Run on new PRs, updated PRs, and reopened PRs
 
 jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
+      # Step 1: Checkout code
       - uses: actions/checkout@v3
 
+      # Step 2: Set up Python
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.x'
 
+      # Step 3: Install dependencies
       - name: Install dependencies
         run: pip install -r requirements.txt
 
+      # Step 4: Run PR Lint Bot
       - name: Run PR Lint Bot
         env:
-          GITHUB_TOKEN: ${{ secrets.PERSONAL_TOKEN }}  # Use a GitHub Secret
-          PR_NUMBER: ${{ github.event.pull_request.number }}
+          GITHUB_TOKEN: ${{ secrets.PERSONAL_TOKEN }}            # GitHub token stored as secret
+          PR_NUMBER: ${{ github.event.pull_request.number }}     # PR number automatically from event
         run: python app.py
