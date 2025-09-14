@@ -1,6 +1,6 @@
 import os
 import re
-from github import Github
+from github import Github, Auth
 
 token = os.getenv("GITHUB_TOKEN")
 repo_name = os.getenv("GITHUB_REPOSITORY")
@@ -19,7 +19,7 @@ def lint_file(filename):
     return issues
 
 def main():
-    gh = Github(auth=("token", token))
+    gh = Github(auth=Auth.Token(token))
     repo = gh.get_repo(repo_name)
     pr = repo.get_pull(pr_number)
 
@@ -32,7 +32,7 @@ def main():
                 all_issues.extend(lint_file(os.path.join(root, f)))
 
     if all_issues:
-        commit = pr.get_commits().reversed[0]  # latest commit object
+        commit = list(pr.get_commits())[-1]
         for filename, line, msg in all_issues:
             pr.create_review_comment(
                 body=msg,
