@@ -17,12 +17,12 @@ jobs:
           python-version: '3.x'
 
       - name: Install dependencies
-        run: pip install -r requirements.txt
+        run: pip install PyGithub
 
       - name: Run PR Lint Bot
         env:
           GITHUB_TOKEN: ${{ secrets.PERSONAL_TOKEN }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
         run: |
-          echo "PR Lint Bot is running with inline comments!"
-          python app.py
+          python lint_pr.py
