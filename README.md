@@ -1,46 +1,22 @@
-# \# PR Lint Bot
+PR Lint Bot
 
-# 
 
-# A GitHub Actions bot that automatically lints Python files in a pull request (PR) and posts a summary of code issues as a comment. Designed for improving code quality and enforcing best practices automatically.
 
-# 
+A lightweight GitHub Action bot that automatically checks Python code for common linting issues in Pull Requests and posts comments directly on GitHub.
 
-# ---
 
-# 
 
-# \## Features
+Runs automatically on every PR
 
-# 
 
-# \- Checks all Python files in the repository.
 
-# \- Detects:
+Posts inline and summary comments
 
-# &nbsp; - Lines longer than 100 characters.
 
-# &nbsp; - Tabs instead of spaces.
 
-# &nbsp; - Trailing whitespaces.
+Uses GitHub Secrets (no tokens in repo)
 
-# \- Posts a \*\*summary comment\*\* on the PR with all linting issues.
 
-# \- Lightweight and fully automated with GitHub Actions.
 
-# \- Easy to extend for more linting rules or custom reports.
-
-# 
-
-# ---
-
-# 
-
-# \## Folder Structure
-
-# 
-
-# PR Lint Bot
-
-# Test PR
+Fast and dependency-light (just requests)
 

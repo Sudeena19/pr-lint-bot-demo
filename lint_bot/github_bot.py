@@ -1,24 +1,22 @@
-import os
 import requests
 
-GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
-REPO = os.getenv("REPO")
-PR_NUMBER = os.getenv("PR_NUMBER")
-
-def post_summary_comment(messages):
-    if not GITHUB_TOKEN or not REPO or not PR_NUMBER:
-        print("Missing environment variables for GitHub bot")
-        return
-    url = f"https://api.github.com/repos/{REPO}/issues/{PR_NUMBER}/comments"
-    headers = {"Authorization": f"token {GITHUB_TOKEN}"}
-    body = "\n".join(messages)
+def post_inline_comment(repo, pr_number, token, message):
+    # For demonstration, just posts the first issue inline (needs line/commit info for true inline)
+    url = f"https://api.github.com/repos/{repo}/issues/{pr_number}/comments"
+    headers = {"Authorization": f"token {token}"}
+    body = f"**PR Lint Bot Inline Example:** {message}"
     response = requests.post(url, json={"body": body}, headers=headers)
     if response.status_code == 201:
-        print("Summary comment posted successfully!")
+        print("Inline comment posted!")
     else:
-        print("Failed to post summary:", response.status_code, response.text)
+        print("Failed to post inline comment:", response.text)
 
-def post_inline_comment(file, line, message):
-    # GitHub PR review comments require a proper GitHub App token with permissions.
-    # For simplicity, this workflow will post only a summary comment for all issues.
-    print(f"Inline comment: {file}:{line} {message}")
+def post_summary_comment(repo, pr_number, token, messages):
+    url = f"https://api.github.com/repos/{repo}/issues/{pr_number}/comments"
+    headers = {"Authorization": f"token {token}"}
+    body = "### PR Lint Bot Summary\n\n" + "\n".join(messages)
+    response = requests.post(url, json={"body": body}, headers=headers)
+    if response.status_code == 201:
+        print("Summary comment posted!")
+    else:
+        print("Failed to post summary:", response.text)
