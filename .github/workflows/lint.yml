@@ -1,17 +1,23 @@
-name: PR Lint
+name: PR Lint Bot
 
 on:
   pull_request:
-    types: [opened, synchronize, reopened]
+    branches:
+      - main
+      - master
+      - develop
+      - test-pr-lint
 
 jobs:
   lint:
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout code
+        uses: actions/checkout@v4
 
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: "3.11"
 
@@ -20,10 +26,9 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Run PR Lint Bot
+      - name: Run lint bot
         env:
-          GITHUB_TOKEN: ${{ secrets.PERSONAL_TOKEN }}
+          PAT_TOKEN: ${{ secrets.PAT_TOKEN }}
           REPO: ${{ github.repository }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
-        run: |
-          python app.py
+        run: python app.py
