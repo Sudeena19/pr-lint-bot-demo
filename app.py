@@ -6,10 +6,11 @@ def main():
     issues = lint_repo(".")
     print(f"Found {len(issues)} issues")
 
+    # Try inline for each issue
     for issue in issues:
-        if "E" in issue["message"] or "F" in issue["message"]:
-            post_inline_comment(issue)
+        post_inline_comment(issue)
 
+    # Always post summary
     post_summary_comment(issues)
 
 

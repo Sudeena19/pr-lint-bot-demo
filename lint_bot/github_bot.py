@@ -1,45 +1,38 @@
 import os
 from github import Github
 
-# Load environment variables
-GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
+PAT_TOKEN = os.getenv("PAT_TOKEN")
 REPO_NAME = os.getenv("REPO")
 PR_NUMBER = int(os.getenv("PR_NUMBER", 0))
 
-if not all([GITHUB_TOKEN, REPO_NAME, PR_NUMBER]):
-    raise EnvironmentError("Missing environment variables: GITHUB_TOKEN, REPO, or PR_NUMBER")
+if not all([PAT_TOKEN, REPO_NAME, PR_NUMBER]):
+    raise EnvironmentError("Missing environment variables: PAT_TOKEN, REPO, or PR_NUMBER")
 
-gh = Github(GITHUB_TOKEN)
+gh = Github(PAT_TOKEN)
 repo = gh.get_repo(REPO_NAME)
 pr = repo.get_pull(PR_NUMBER)
 
 
 def post_inline_comment(issue):
     """
-    Try to post an inline comment on the PR diff.
-    If it fails, the caller should add it to the summary.
+    Posts an inline comment on the pull request for a given issue.
     """
     try:
         pr.create_review(
-            body="Automated linting review",
             event="COMMENT",
-            comments=[
-                {
-                    "path": issue["filename"],
-                    "position": issue["line"] if issue["line"] > 0 else 1,
-                    "body": issue["message"],
-                }
-            ],
+            comments=[{
+                "path": issue["filename"],
+                "position": issue["line"] if issue["line"] > 0 else 1,
+                "body": issue["message"]
+            }]
         )
-        return True
     except Exception as e:
         print(f"Could not post inline comment, will include in summary: {e}")
-        return False
 
 
 def post_summary_comment(issues):
     """
-    Always post a summary comment with all issues.
+    Posts a summary comment listing all linting issues.
     """
     if not issues:
         body = "No linting issues found."
@@ -47,7 +40,6 @@ def post_summary_comment(issues):
         body = "## Linting Summary\n"
         for issue in issues:
             body += f"- {issue['filename']}:{issue['line']} - {issue['message']}\n"
-
     try:
         pr.create_issue_comment(body)
     except Exception as e:
