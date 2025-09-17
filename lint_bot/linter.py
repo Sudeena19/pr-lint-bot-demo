@@ -1,5 +1,6 @@
 import os
 import subprocess
+import json
 
 IGNORE_DIRS = {"venv", ".venv", "__pycache__", ".git"}
 
@@ -12,23 +13,23 @@ def lint_file(file_path):
     issues = []
     try:
         result = subprocess.run(
-            ["ruff", "--select=E,F,W", file_path],
+            ["ruff", "--select=E,F,W", "--format=json", file_path],
             capture_output=True,
             text=True,
             check=False
         )
         output = result.stdout.strip()
         if output:
-            for line in output.splitlines():
-                # Ruff output format: path:line:col: code message
-                parts = line.split(":", 3)
-                if len(parts) == 4:
-                    filename, line_no, _, message = parts
+            try:
+                data = json.loads(output)
+                for item in data:
                     issues.append({
-                        "filename": filename.strip(),
-                        "line": int(line_no.strip()),
-                        "message": message.strip()
+                        "filename": file_path,
+                        "line": item["location"]["row"],
+                        "message": f"{item['code']} {item['message']}"
                     })
+            except json.JSONDecodeError as e:
+                print(f"Could not parse Ruff output for {file_path}: {e}")
     except Exception as e:
         print(f"Error linting {file_path}: {e}")
     return issues
