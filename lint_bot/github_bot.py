@@ -15,7 +15,7 @@ pr = repo.get_pull(PR_NUMBER)
 
 def post_inline_comment(issue):
     """
-    Posts an inline comment on the pull request for a given issue.
+    Try to post an inline comment on the PR for a single issue.
     """
     try:
         pr.create_review(
@@ -26,13 +26,16 @@ def post_inline_comment(issue):
                 "body": issue["message"]
             }]
         )
+        print(f"Inline comment posted: {issue['filename']}:{issue['line']}")
+        return True
     except Exception as e:
-        print(f"Could not post inline comment, will include in summary: {e}")
+        print(f"Could not post inline comment for {issue['filename']}:{issue['line']} -> {e}")
+        return False
 
 
 def post_summary_comment(issues):
     """
-    Posts a summary comment listing all linting issues.
+    Always posts a summary comment for all linting issues.
     """
     if not issues:
         body = "No linting issues found."
@@ -40,7 +43,9 @@ def post_summary_comment(issues):
         body = "## Linting Summary\n"
         for issue in issues:
             body += f"- {issue['filename']}:{issue['line']} - {issue['message']}\n"
+
     try:
         pr.create_issue_comment(body)
+        print("Summary comment posted.")
     except Exception as e:
         print(f"Could not post summary comment: {e}")
