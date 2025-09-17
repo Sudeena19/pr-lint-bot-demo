@@ -18,13 +18,12 @@ def post_inline_comment(issue):
     Posts an inline comment on the pull request for a given issue.
     """
     try:
-        pr.create_review(
-            event="COMMENT",
-            comments=[{
-                "path": issue["filename"],
-                "position": issue["line"] if issue["line"] > 0 else 1,
-                "body": issue["message"]
-            }]
+        commit_id = pr.head.sha  # commit on which PR is based
+        pr.create_review_comment(
+            body=issue["message"],
+            commit_id=commit_id,
+            path=issue["filename"],
+            line=issue["line"]
         )
     except Exception as e:
         print(f"Could not post inline comment, will include in summary: {e}")

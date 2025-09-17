@@ -1,12 +1,8 @@
-name: PR Lint Bot
+name: PR Lint
 
 on:
   pull_request:
-    branches:
-      - main
-      - master
-      - develop
-      - test-pr-lint
+    types: [opened, synchronize, reopened]
 
 jobs:
   lint:
@@ -14,10 +10,10 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v3
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v4
         with:
           python-version: "3.11"
 
@@ -26,7 +22,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Run lint bot
+      - name: Run Linter Bot
         env:
           PAT_TOKEN: ${{ secrets.PAT_TOKEN }}
           REPO: ${{ github.repository }}

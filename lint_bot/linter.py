@@ -12,7 +12,7 @@ def lint_file(file_path):
     issues = []
     try:
         result = subprocess.run(
-            ["ruff", "--select=E,F,W", "--show-source", file_path],
+            ["ruff", "--select=E,F,W", file_path],
             capture_output=True,
             text=True,
             check=False
