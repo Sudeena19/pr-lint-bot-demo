@@ -13,20 +13,24 @@ def lint_file(file_path):
     issues = []
     try:
         result = subprocess.run(
-            ["ruff", "--select=E,F,W", "--format=json", file_path],
+            ["ruff", "check", "--select=E,F,W", "--format=json", file_path],
             capture_output=True,
             text=True,
             check=False
         )
         output = result.stdout.strip()
+
+        # DEBUG: print raw Ruff output
+        print(f"DEBUG Ruff output for {file_path}: {output}")
+
         if output:
             try:
-                data = json.loads(output)
-                for item in data:
+                ruff_issues = json.loads(output)
+                for issue in ruff_issues:
                     issues.append({
-                        "filename": file_path,
-                        "line": item["location"]["row"],
-                        "message": f"{item['code']} {item['message']}"
+                        "filename": issue.get("filename", file_path),
+                        "line": issue.get("location", {}).get("row", 1),
+                        "message": issue.get("message", "Linting issue")
                     })
             except json.JSONDecodeError as e:
                 print(f"Could not parse Ruff output for {file_path}: {e}")
